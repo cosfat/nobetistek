@@ -1,0 +1,196 @@
+{
+  "admin": {
+    "username": "admin",
+    "passwordHash": "123456",
+    "name": "Dr. Yönetici"
+  },
+  "hospitals": [
+    {
+      "id": "hosp-1",
+      "name": "İstanbul Şehir Hastanesi",
+      "city": "İstanbul",
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "hosp-2",
+      "name": "Ankara Bilkent Şehir Hastanesi",
+      "city": "Ankara",
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    }
+  ],
+  "units": [
+    {
+      "id": "unit-1",
+      "hospitalId": "hosp-1",
+      "name": "Acil Tıp Kliniği (Sarı / Kırmızı Alan)",
+      "minDoctorsPerShift": 2,
+      "shareToken": "acil-tip-kasim",
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "unit-2",
+      "hospitalId": "hosp-1",
+      "name": "İç Hastalıkları (Dahiliye)",
+      "minDoctorsPerShift": 1,
+      "shareToken": "dahiliye-nobet",
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "unit-1792788099347",
+      "hospitalId": "hosp-1",
+      "name": "Çocuk Cerrahi",
+      "minDoctorsPerShift": 2,
+      "shareToken": "-ocuk-cerrahi-hd7l",
+      "createdAt": "2026-10-23T20:41:39.347Z"
+    }
+  ],
+  "doctors": [
+    {
+      "id": "doc-1",
+      "unitId": "unit-1",
+      "title": "Uzm. Dr.",
+      "name": "Ahmet Yılmaz",
+      "phone": "0532 111 2233",
+      "email": "ahmet@hastane.gov.tr",
+      "targetShifts": 6,
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "doc-2",
+      "unitId": "unit-1",
+      "title": "Uzm. Dr.",
+      "name": "Fatma Çelik",
+      "phone": "0533 222 3344",
+      "email": "fatma@hastane.gov.tr",
+      "targetShifts": 5,
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "doc-3",
+      "unitId": "unit-1",
+      "title": "Asis. Dr.",
+      "name": "Mehmet Kaya",
+      "phone": "0535 333 4455",
+      "email": "mehmet@hastane.gov.tr",
+      "targetShifts": 7,
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "doc-4",
+      "unitId": "unit-1",
+      "title": "Asis. Dr.",
+      "name": "Zeynep Demir",
+      "phone": "0542 444 5566",
+      "email": "zeynep@hastane.gov.tr",
+      "targetShifts": 7,
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "doc-5",
+      "unitId": "unit-1",
+      "title": "Asis. Dr.",
+      "name": "Burak Öztürk",
+      "phone": "0555 555 6677",
+      "email": "burak@hastane.gov.tr",
+      "targetShifts": 6,
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "doc-6",
+      "unitId": "unit-1",
+      "title": "Asis. Dr.",
+      "name": "Elif Şahin",
+      "phone": "0505 666 7788",
+      "email": "elif@hastane.gov.tr",
+      "targetShifts": 7,
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "doc-7",
+      "unitId": "unit-1",
+      "title": "Asis. Dr.",
+      "name": "Caner Aydın",
+      "phone": "0544 777 8899",
+      "email": "caner@hastane.gov.tr",
+      "targetShifts": 6,
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "doc-8",
+      "unitId": "unit-1",
+      "title": "Asis. Dr.",
+      "name": "Merve Koç",
+      "phone": "0530 888 9900",
+      "email": "merve@hastane.gov.tr",
+      "targetShifts": 6,
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    }
+  ],
+  "periods": [
+    {
+      "id": "period-1",
+      "unitId": "unit-1",
+      "name": "Kasım 2026 Nöbet Listesi",
+      "startDate": "2026-11-01",
+      "endDate": "2026-11-30",
+      "deadline": "2026-10-28",
+      "requiredDoctorsPerDay": 2,
+      "weekendExtraDoctors": 1,
+      "status": "active",
+      "shareToken": "acil-kasim-2026",
+      "createdAt": "2026-10-23T20:30:00.585Z"
+    }
+  ],
+  "preferences": [
+    {
+      "id": "pref-1",
+      "periodId": "period-1",
+      "doctorId": "doc-1",
+      "wantDates": [
+        "2026-11-06",
+        "2026-11-13",
+        "2026-11-20"
+      ],
+      "avoidDates": [
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-15"
+      ],
+      "notes": "15 Kasım tarihinde sempozyum sunumum var, nöbet yazılmamasını rica ederim.",
+      "submittedAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "pref-2",
+      "periodId": "period-1",
+      "doctorId": "doc-2",
+      "wantDates": [
+        "2026-11-07",
+        "2026-11-14",
+        "2026-11-28"
+      ],
+      "avoidDates": [
+        "2026-11-21",
+        "2026-11-22"
+      ],
+      "notes": "21-22 Kasım hafta sonu aile ziyareti.",
+      "submittedAt": "2026-10-23T20:30:00.585Z"
+    },
+    {
+      "id": "pref-3",
+      "periodId": "period-1",
+      "doctorId": "doc-3",
+      "wantDates": [
+        "2026-11-02",
+        "2026-11-09",
+        "2026-11-16",
+        "2026-11-23"
+      ],
+      "avoidDates": [
+        "2026-11-06",
+        "2026-11-07"
+      ],
+      "notes": "Pazartesi günleri nöbet tercihimdir.",
+      "submittedAt": "2026-10-23T20:30:00.585Z"
+    }
+  ]
+}

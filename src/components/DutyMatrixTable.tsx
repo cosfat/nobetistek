@@ -106,10 +106,13 @@ export const DutyMatrixTable: React.FC<DutyMatrixTableProps> = ({
     downloadCSV(`${unit.name}_Nobet_Talepleri_${period.startDate}.csv`, csv);
   };
 
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
   // Handle Auto-Schedule algorithm
   const handleGenerateSchedule = async () => {
     try {
       setGeneratingSchedule(true);
+      setScheduleError(null);
       const res = await api.generateSchedule(period.id);
       if (res.success && res.draftSchedule) {
         setScheduleData(res.draftSchedule);
@@ -117,7 +120,7 @@ export const DutyMatrixTable: React.FC<DutyMatrixTableProps> = ({
         onRefresh();
       }
     } catch (err: any) {
-      alert('Otomatik çizelge oluşturulurken hata: ' + (err?.message || 'Hata'));
+      setScheduleError('Otomatik çizelge oluşturulurken hata: ' + (err?.message || 'Hata'));
     } finally {
       setGeneratingSchedule(false);
     }
@@ -129,6 +132,21 @@ export const DutyMatrixTable: React.FC<DutyMatrixTableProps> = ({
 
   return (
     <div className="space-y-6">
+      {scheduleError && (
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{scheduleError}</span>
+          </div>
+          <button
+            onClick={() => setScheduleError(null)}
+            className="text-slate-400 hover:text-white text-xs underline"
+          >
+            Kapat
+          </button>
+        </div>
+      )}
+
       {/* Top Controls & Status Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-md">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">

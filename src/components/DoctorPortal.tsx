@@ -87,7 +87,8 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   // Handle cell click
   const handleDateClick = (dateStr: string) => {
     if (!selectedDoctorId) {
-      alert('Lütfen önce yukarıdaki listeden adınızı seçiniz!');
+      setError('Lütfen önce yukarıdaki listeden adınızı seçiniz!');
+      setTimeout(() => setError(null), 3000);
       return;
     }
 
@@ -129,10 +130,8 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
   };
 
   const handleClearAll = () => {
-    if (confirm('Tüm tarih seçimleriniz temizlensin mi?')) {
-      setWantDates([]);
-      setAvoidDates([]);
-    }
+    setWantDates([]);
+    setAvoidDates([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -171,7 +170,7 @@ export const DoctorPortal: React.FC<DoctorPortalProps> = ({
       setSubmittedSuccess(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
-      alert('Talepler kaydedilirken bir hata oluştu: ' + (err?.message || 'Bilinmeyen hata'));
+      setError('Talepler kaydedilirken bir hata oluştu: ' + (err?.message || 'Bilinmeyen hata'));
     } finally {
       setSubmitting(false);
     }

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Period, Unit } from '../types';
 import { api } from '../services/api';
 import { formatDateTR, formatShortDateTR } from '../utils/dateUtils';
-import { Calendar, Plus, Share2, Check, Trash2, Clock, CheckCircle } from 'lucide-react';
+import { Calendar, Plus, Share2, Check, Trash2, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface PeriodManagerProps {
   periods: Period[];
@@ -30,9 +31,15 @@ export const PeriodManager: React.FC<PeriodManagerProps> = ({
   const [weekendExtra, setWeekendExtra] = useState(1);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Delete modal state
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleCreatePeriod = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!unit || !name || !startDate || !endDate) return;
+    setErrorMessage(null);
 
     try {
       const created = await api.createPeriod({
@@ -49,7 +56,7 @@ export const PeriodManager: React.FC<PeriodManagerProps> = ({
       onDataChange();
       onSelectPeriod(created.id);
     } catch (err: any) {
-      alert('Nöbet dönemi başlatılırken hata: ' + err.message);
+      setErrorMessage('Nöbet dönemi başlatılırken hata: ' + (err?.message || 'Bilinmeyen hata'));
     }
   };
 
@@ -59,18 +66,22 @@ export const PeriodManager: React.FC<PeriodManagerProps> = ({
       await api.updatePeriod(period.id, { status: nextStatus });
       onDataChange();
     } catch (err: any) {
-      alert('Durum güncellenirken hata: ' + err.message);
+      setErrorMessage('Durum güncellenirken hata: ' + (err?.message || 'Hata'));
     }
   };
 
-  const handleDelete = async (id: string, pName: string) => {
-    if (confirm(`"${pName}" nöbet dönemini ve toplanan tüm tercihleri silmek istediğinize emin misiniz?`)) {
-      try {
-        await api.deletePeriod(id);
-        onDataChange();
-      } catch (err: any) {
-        alert('Silme hatası: ' + err.message);
-      }
+  const handleExecuteDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setErrorMessage(null);
+    try {
+      await api.deletePeriod(deleteTarget.id);
+      setDeleteTarget(null);
+      onDataChange();
+    } catch (err: any) {
+      setErrorMessage('Silme hatası: ' + (err?.message || 'Bilinmeyen hata'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -93,6 +104,21 @@ export const PeriodManager: React.FC<PeriodManagerProps> = ({
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
+      {errorMessage && (
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-slate-400 hover:text-white text-xs underline"
+          >
+            Kapat
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2 text-xs font-semibold text-teal-400 uppercase tracking-wider mb-1">
@@ -209,9 +235,12 @@ export const PeriodManager: React.FC<PeriodManagerProps> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(period.id, period.name);
+                      setDeleteTarget({
+                        id: period.id,
+                        name: period.name,
+                      });
                     }}
-                    className="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg transition-colors"
+                    className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all"
                     title="Dönemi Sil"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -222,6 +251,17 @@ export const PeriodManager: React.FC<PeriodManagerProps> = ({
           })
         )}
       </div>
+
+      {/* Reusable Delete Modal for Period */}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        title="Nöbet Dönemini Sil"
+        itemName={deleteTarget?.name || ''}
+        description="Bu nöbet dönemi ve hekimler tarafından bu döneme özel gönderilen tüm istekler ve mazeretler kalıcı olarak silinecektir."
+        isDeleting={isDeleting}
+        onConfirm={handleExecuteDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {/* Modal: Add Duty Period */}
       {showAddModal && (

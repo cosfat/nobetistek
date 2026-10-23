@@ -56,18 +56,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setDoctors(docList);
       setPeriods(perList);
 
-      // Set default selected hospital if none selected
-      const currentHospId = selectedHospitalId || (hospList[0] ? hospList[0].id : '');
+      // Set default selected hospital (fallback if deleted or empty)
+      let currentHospId = selectedHospitalId;
+      if (!hospList.some((h) => h.id === currentHospId)) {
+        currentHospId = hospList[0] ? hospList[0].id : '';
+      }
       setSelectedHospitalId(currentHospId);
 
-      // Set default selected unit
+      // Set default selected unit (fallback if deleted or empty)
       const availableUnits = unitList.filter((u) => u.hospitalId === currentHospId);
-      const currentUnitId = selectedUnitId || (availableUnits[0] ? availableUnits[0].id : (unitList[0] ? unitList[0].id : ''));
+      let currentUnitId = selectedUnitId;
+      if (!availableUnits.some((u) => u.id === currentUnitId)) {
+        currentUnitId = availableUnits[0] ? availableUnits[0].id : (unitList[0] ? unitList[0].id : '');
+      }
       setSelectedUnitId(currentUnitId);
 
-      // Set default selected period
+      // Set default selected period (fallback if deleted or empty)
       const availablePeriods = perList.filter((p) => p.unitId === currentUnitId);
-      const currentPeriodId = selectedPeriodId || (availablePeriods[0] ? availablePeriods[0].id : (perList[0] ? perList[0].id : ''));
+      let currentPeriodId = selectedPeriodId;
+      if (!availablePeriods.some((p) => p.id === currentPeriodId)) {
+        currentPeriodId = availablePeriods[0] ? availablePeriods[0].id : (perList[0] ? perList[0].id : '');
+      }
       setSelectedPeriodId(currentPeriodId);
 
       // Load preferences for this period if any

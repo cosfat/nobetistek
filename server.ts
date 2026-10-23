@@ -523,14 +523,18 @@ app.post('/api/periods/:id/generate-schedule', (req, res) => {
   const doctors = db.doctors.filter(d => d.unitId === period.unitId);
   const preferences = db.preferences.filter(p => p.periodId === id);
 
-  // Generate date list between start and end date
+  // Generate date list between start and end date (timezone safe)
   const dates: string[] = [];
-  const start = new Date(period.startDate + 'T00:00:00');
-  const end = new Date(period.endDate + 'T00:00:00');
-  const current = new Date(start);
+  const [sY, sM, sD] = period.startDate.split('-').map(Number);
+  const [eY, eM, eD] = period.endDate.split('-').map(Number);
+  const current = new Date(sY, sM - 1, sD, 12, 0, 0);
+  const end = new Date(eY, eM - 1, eD, 12, 0, 0);
 
   while (current <= end) {
-    dates.push(current.toISOString().split('T')[0]);
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, '0');
+    const d = String(current.getDate()).padStart(2, '0');
+    dates.push(`${y}-${m}-${d}`);
     current.setDate(current.getDate() + 1);
   }
 

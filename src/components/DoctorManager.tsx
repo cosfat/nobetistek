@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Doctor, Unit } from '../types';
 import { api } from '../services/api';
-import { UserPlus, Users, Trash2, Phone, Mail, FileText, Check, Plus, MessageSquare } from 'lucide-react';
+import { UserPlus, Users, Trash2, Phone, Mail, FileText, Check, Plus, MessageSquare, AlertCircle } from 'lucide-react';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface DoctorManagerProps {
   doctors: Doctor[];
@@ -27,9 +28,15 @@ export const DoctorManager: React.FC<DoctorManagerProps> = ({
   // Batch Form
   const [batchText, setBatchText] = useState('');
 
+  // Delete modal state
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const handleAddDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !unit) return;
+    setErrorMessage(null);
 
     try {
       await api.createDoctor({
@@ -46,13 +53,14 @@ export const DoctorManager: React.FC<DoctorManagerProps> = ({
       setShowAddModal(false);
       onDataChange();
     } catch (err: any) {
-      alert('Doktor eklenirken hata: ' + err.message);
+      setErrorMessage('Doktor eklenirken hata: ' + (err?.message || 'Bilinmeyen hata'));
     }
   };
 
   const handleBatchAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!batchText.trim() || !unit) return;
+    setErrorMessage(null);
 
     // Parse lines
     const lines = batchText.split('\n').map((l) => l.trim()).filter(Boolean);
@@ -82,7 +90,7 @@ export const DoctorManager: React.FC<DoctorManagerProps> = ({
     });
 
     if (doctorList.length === 0) {
-      alert('Geçerli doktor ismi bulunamadı.');
+      setErrorMessage('Geçerli doktor ismi bulunamadı.');
       return;
     }
 
@@ -92,18 +100,22 @@ export const DoctorManager: React.FC<DoctorManagerProps> = ({
       setShowBatchModal(false);
       onDataChange();
     } catch (err: any) {
-      alert('Toplu eklemede hata: ' + err.message);
+      setErrorMessage('Toplu eklemede hata: ' + (err?.message || 'Bilinmeyen hata'));
     }
   };
 
-  const handleDeleteDoctor = async (id: string, docName: string) => {
-    if (confirm(`"${docName}" hekimini ve kayıtlı nöbet tercihlerini silmek istediğinize emin misiniz?`)) {
-      try {
-        await api.deleteDoctor(id);
-        onDataChange();
-      } catch (err: any) {
-        alert('Silme hatası: ' + err.message);
-      }
+  const handleExecuteDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    setErrorMessage(null);
+    try {
+      await api.deleteDoctor(deleteTarget.id);
+      setDeleteTarget(null);
+      onDataChange();
+    } catch (err: any) {
+      setErrorMessage('Silme hatası: ' + (err?.message || 'Bilinmeyen hata'));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -117,6 +129,21 @@ export const DoctorManager: React.FC<DoctorManagerProps> = ({
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xl space-y-5">
+      {errorMessage && (
+        <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-slate-400 hover:text-white text-xs underline"
+          >
+            Kapat
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2 text-xs font-semibold text-teal-400 uppercase tracking-wider mb-1">
@@ -182,11 +209,11 @@ export const DoctorManager: React.FC<DoctorManagerProps> = ({
                   </div>
 
                   <button
-                    onClick={() => handleDeleteDoctor(doc.id, `${doc.title} ${doc.name}`)}
-                    className="p-1 text-slate-500 hover:text-rose-400 rounded transition-colors"
-                    title="Sil"
+                    onClick={() => setDeleteTarget({ id: doc.id, name: `${doc.title} ${doc.name}` })}
+                    className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all"
+                    title="Doktoru Sil"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
 
@@ -227,6 +254,17 @@ export const DoctorManager: React.FC<DoctorManagerProps> = ({
           ))
         )}
       </div>
+
+      {/* Reusable Delete Modal for Doctor */}
+      <ConfirmDeleteModal
+        isOpen={!!deleteTarget}
+        title="Doktoru Sil"
+        itemName={deleteTarget?.name || ''}
+        description="Bu hekim silindiğinde bildirdiği tüm nöbet tercihleri ve mazeretleri de silinecektir."
+        isDeleting={isDeleting}
+        onConfirm={handleExecuteDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {/* Modal: Single Doctor Add */}
       {showAddModal && (
