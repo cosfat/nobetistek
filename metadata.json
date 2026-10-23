@@ -1,0 +1,6 @@
+{
+  "name": "NöbetTalep - Doktor Nöbet Tercih ve Yönetim Sistemi",
+  "description": "Hastaneler, klinikler ve doktorlar için nöbet istek ve mazeret toplama, paylaşılabilir link ve otomatik nöbet çizelgesi yönetim sistemi.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
