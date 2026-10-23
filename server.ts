@@ -20,8 +20,17 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+interface User {
+  id: string;
+  username: string;
+  passwordHash: string;
+  name: string;
+  createdAt: string;
+}
+
 interface Hospital {
   id: string;
+  userId: string;
   name: string;
   city: string;
   createdAt: string;
@@ -29,6 +38,7 @@ interface Hospital {
 
 interface Unit {
   id: string;
+  userId: string;
   hospitalId: string;
   name: string;
   minDoctorsPerShift: number;
@@ -38,6 +48,7 @@ interface Unit {
 
 interface Doctor {
   id: string;
+  userId: string;
   unitId: string;
   title: string;
   name: string;
@@ -50,6 +61,7 @@ interface Doctor {
 
 interface Period {
   id: string;
+  userId: string;
   unitId: string;
   name: string;
   startDate: string; // YYYY-MM-DD
@@ -74,11 +86,7 @@ interface Preference {
 }
 
 interface DB {
-  admin: {
-    username: string;
-    passwordHash: string; // plain for demo simplicity or hashed
-    name: string;
-  };
+  users: User[];
   hospitals: Hospital[];
   units: Unit[];
   doctors: Doctor[];
@@ -86,21 +94,29 @@ interface DB {
   preferences: Preference[];
 }
 
+const DEFAULT_USER_ID = 'user-default';
+
 const initialSeed: DB = {
-  admin: {
-    username: 'admin',
-    passwordHash: '123456',
-    name: 'Dr. Yönetici',
-  },
+  users: [
+    {
+      id: DEFAULT_USER_ID,
+      username: 'admin',
+      passwordHash: '123456',
+      name: 'Dr. Yönetici',
+      createdAt: new Date().toISOString(),
+    },
+  ],
   hospitals: [
     {
       id: 'hosp-1',
+      userId: DEFAULT_USER_ID,
       name: 'İstanbul Şehir Hastanesi',
       city: 'İstanbul',
       createdAt: new Date().toISOString(),
     },
     {
       id: 'hosp-2',
+      userId: DEFAULT_USER_ID,
       name: 'Ankara Bilkent Şehir Hastanesi',
       city: 'Ankara',
       createdAt: new Date().toISOString(),
@@ -109,6 +125,7 @@ const initialSeed: DB = {
   units: [
     {
       id: 'unit-1',
+      userId: DEFAULT_USER_ID,
       hospitalId: 'hosp-1',
       name: 'Acil Tıp Kliniği (Sarı / Kırmızı Alan)',
       minDoctorsPerShift: 2,
@@ -117,6 +134,7 @@ const initialSeed: DB = {
     },
     {
       id: 'unit-2',
+      userId: DEFAULT_USER_ID,
       hospitalId: 'hosp-1',
       name: 'İç Hastalıkları (Dahiliye)',
       minDoctorsPerShift: 1,
@@ -125,18 +143,19 @@ const initialSeed: DB = {
     },
   ],
   doctors: [
-    { id: 'doc-1', unitId: 'unit-1', title: 'Uzm. Dr.', name: 'Ahmet Yılmaz', phone: '0532 111 2233', email: 'ahmet@hastane.gov.tr', targetShifts: 6, createdAt: new Date().toISOString() },
-    { id: 'doc-2', unitId: 'unit-1', title: 'Uzm. Dr.', name: 'Fatma Çelik', phone: '0533 222 3344', email: 'fatma@hastane.gov.tr', targetShifts: 5, createdAt: new Date().toISOString() },
-    { id: 'doc-3', unitId: 'unit-1', title: 'Asis. Dr.', name: 'Mehmet Kaya', phone: '0535 333 4455', email: 'mehmet@hastane.gov.tr', targetShifts: 7, createdAt: new Date().toISOString() },
-    { id: 'doc-4', unitId: 'unit-1', title: 'Asis. Dr.', name: 'Zeynep Demir', phone: '0542 444 5566', email: 'zeynep@hastane.gov.tr', targetShifts: 7, createdAt: new Date().toISOString() },
-    { id: 'doc-5', unitId: 'unit-1', title: 'Asis. Dr.', name: 'Burak Öztürk', phone: '0555 555 6677', email: 'burak@hastane.gov.tr', targetShifts: 6, createdAt: new Date().toISOString() },
-    { id: 'doc-6', unitId: 'unit-1', title: 'Asis. Dr.', name: 'Elif Şahin', phone: '0505 666 7788', email: 'elif@hastane.gov.tr', targetShifts: 7, createdAt: new Date().toISOString() },
-    { id: 'doc-7', unitId: 'unit-1', title: 'Asis. Dr.', name: 'Caner Aydın', phone: '0544 777 8899', email: 'caner@hastane.gov.tr', targetShifts: 6, createdAt: new Date().toISOString() },
-    { id: 'doc-8', unitId: 'unit-1', title: 'Asis. Dr.', name: 'Merve Koç', phone: '0530 888 9900', email: 'merve@hastane.gov.tr', targetShifts: 6, createdAt: new Date().toISOString() },
+    { id: 'doc-1', userId: DEFAULT_USER_ID, unitId: 'unit-1', title: 'Uzm. Dr.', name: 'Ahmet Yılmaz', phone: '0532 111 2233', email: 'ahmet@hastane.gov.tr', targetShifts: 6, createdAt: new Date().toISOString() },
+    { id: 'doc-2', userId: DEFAULT_USER_ID, unitId: 'unit-1', title: 'Uzm. Dr.', name: 'Fatma Çelik', phone: '0533 222 3344', email: 'fatma@hastane.gov.tr', targetShifts: 5, createdAt: new Date().toISOString() },
+    { id: 'doc-3', userId: DEFAULT_USER_ID, unitId: 'unit-1', title: 'Asis. Dr.', name: 'Mehmet Kaya', phone: '0535 333 4455', email: 'mehmet@hastane.gov.tr', targetShifts: 7, createdAt: new Date().toISOString() },
+    { id: 'doc-4', userId: DEFAULT_USER_ID, unitId: 'unit-1', title: 'Asis. Dr.', name: 'Zeynep Demir', phone: '0542 444 5566', email: 'zeynep@hastane.gov.tr', targetShifts: 7, createdAt: new Date().toISOString() },
+    { id: 'doc-5', userId: DEFAULT_USER_ID, unitId: 'unit-1', title: 'Asis. Dr.', name: 'Burak Öztürk', phone: '0555 555 6677', email: 'burak@hastane.gov.tr', targetShifts: 6, createdAt: new Date().toISOString() },
+    { id: 'doc-6', userId: DEFAULT_USER_ID, unitId: 'unit-1', title: 'Asis. Dr.', name: 'Elif Şahin', phone: '0505 666 7788', email: 'elif@hastane.gov.tr', targetShifts: 7, createdAt: new Date().toISOString() },
+    { id: 'doc-7', userId: DEFAULT_USER_ID, unitId: 'unit-1', title: 'Asis. Dr.', name: 'Caner Aydın', phone: '0544 777 8899', email: 'caner@hastane.gov.tr', targetShifts: 6, createdAt: new Date().toISOString() },
+    { id: 'doc-8', userId: DEFAULT_USER_ID, unitId: 'unit-1', title: 'Asis. Dr.', name: 'Merve Koç', phone: '0530 888 9900', email: 'merve@hastane.gov.tr', targetShifts: 6, createdAt: new Date().toISOString() },
   ],
   periods: [
     {
       id: 'period-1',
+      userId: DEFAULT_USER_ID,
       unitId: 'unit-1',
       name: 'Kasım 2026 Nöbet Listesi',
       startDate: '2026-11-01',
@@ -184,7 +203,44 @@ function readDB(): DB {
   try {
     if (fs.existsSync(DATA_FILE)) {
       const content = fs.readFileSync(DATA_FILE, 'utf-8');
-      return JSON.parse(content);
+      const data = JSON.parse(content);
+      
+      // Migration: convert single admin to users array
+      if (!data.users || !Array.isArray(data.users)) {
+        data.users = [
+          {
+            id: DEFAULT_USER_ID,
+            username: data.admin?.username || 'admin',
+            passwordHash: data.admin?.passwordHash || '123456',
+            name: data.admin?.name || 'Dr. Yönetici',
+            createdAt: new Date().toISOString(),
+          },
+        ];
+      }
+
+      // Backfill userId on existing items
+      if (Array.isArray(data.hospitals)) {
+        data.hospitals.forEach((h: any) => {
+          if (!h.userId) h.userId = DEFAULT_USER_ID;
+        });
+      }
+      if (Array.isArray(data.units)) {
+        data.units.forEach((u: any) => {
+          if (!u.userId) u.userId = DEFAULT_USER_ID;
+        });
+      }
+      if (Array.isArray(data.doctors)) {
+        data.doctors.forEach((d: any) => {
+          if (!d.userId) d.userId = DEFAULT_USER_ID;
+        });
+      }
+      if (Array.isArray(data.periods)) {
+        data.periods.forEach((p: any) => {
+          if (!p.userId) p.userId = DEFAULT_USER_ID;
+        });
+      }
+
+      return data;
     }
   } catch (err) {
     console.error('Error reading db.json, returning initial seed:', err);
@@ -204,52 +260,200 @@ function writeDB(data: DB) {
 // Ensure db exists on startup
 readDB();
 
+// Helper to get userId from request
+function getRequestUserId(req: express.Request): string {
+  const headerUserId = req.headers['x-user-id'] as string;
+  if (headerUserId && headerUserId.trim()) {
+    return headerUserId.trim();
+  }
+  const queryUserId = req.query.userId as string;
+  if (queryUserId && queryUserId.trim()) {
+    return queryUserId.trim();
+  }
+  return DEFAULT_USER_ID;
+}
+
 // API Endpoints
 
-// 1. Auth Login
+// 1. Auth: Register
+app.post('/api/auth/register', (req, res) => {
+  const { username, password, name } = req.body;
+  if (!username || !password || !name) {
+    return res.status(400).json({ success: false, message: 'Tüm alanları doldurunuz.' });
+  }
+
+  const cleanUsername = username.trim().toLowerCase();
+  const db = readDB();
+
+  const existing = db.users.find((u) => u.username.toLowerCase() === cleanUsername);
+  if (existing) {
+    return res.status(400).json({ success: false, message: 'Bu kullanıcı adı zaten kullanılıyor. Lütfen başka bir kullanıcı adı seçin.' });
+  }
+
+  const newUser: User = {
+    id: 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    username: cleanUsername,
+    passwordHash: String(password).trim(),
+    name: name.trim(),
+    createdAt: new Date().toISOString(),
+  };
+
+  db.users.push(newUser);
+  writeDB(db);
+
+  return res.json({
+    success: true,
+    user: {
+      id: newUser.id,
+      username: newUser.username,
+      name: newUser.name,
+    },
+    message: 'Hesabınız başarıyla oluşturuldu.',
+  });
+});
+
+// 2. Auth: Login
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: 'Kullanıcı adı ve şifre gereklidir.' });
+  }
+
+  const cleanUsername = String(username).trim().toLowerCase();
+  const cleanPassword = String(password).trim();
   const db = readDB();
-  if (
-    username === db.admin.username &&
-    password === db.admin.passwordHash
-  ) {
+
+  const user = db.users.find(
+    (u) => u.username.toLowerCase() === cleanUsername && u.passwordHash === cleanPassword
+  );
+
+  if (user) {
     return res.json({
       success: true,
       user: {
-        username: db.admin.username,
-        name: db.admin.name,
-        role: 'admin',
+        id: user.id,
+        username: user.username,
+        name: user.name,
       },
-      token: 'admin-session-token-' + Date.now(),
     });
   }
+
   return res.status(401).json({ success: false, message: 'Geçersiz kullanıcı adı veya şifre!' });
 });
 
-// Update Admin Profile / Credentials
+// 3. Auth: Update Profile
 app.post('/api/auth/profile', (req, res) => {
+  const userId = getRequestUserId(req);
   const { username, password, name } = req.body;
   const db = readDB();
-  if (username) db.admin.username = username.trim();
-  if (password) db.admin.passwordHash = password.trim();
-  if (name) db.admin.name = name.trim();
+
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+  }
+
+  if (username) {
+    const cleanUsername = username.trim().toLowerCase();
+    const duplicate = db.users.find((u) => u.username.toLowerCase() === cleanUsername && u.id !== userId);
+    if (duplicate) {
+      return res.status(400).json({ success: false, message: 'Bu kullanıcı adı zaten kullanılıyor.' });
+    }
+    user.username = cleanUsername;
+  }
+  if (password && password.trim()) {
+    user.passwordHash = password.trim();
+  }
+  if (name && name.trim()) {
+    user.name = name.trim();
+  }
+
   writeDB(db);
-  return res.json({ success: true, message: 'Yönetici bilgileri güncellendi.' });
+  return res.json({
+    success: true,
+    user: {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+    },
+    message: 'Kullanıcı bilgileri güncellendi.',
+  });
 });
 
-// 2. Hospitals
-app.get('/api/hospitals', (_req, res) => {
+// 4. Quick starter template for new user (optional helper)
+app.post('/api/user/load-template', (req, res) => {
+  const userId = getRequestUserId(req);
   const db = readDB();
-  res.json(db.hospitals);
+
+  // Create a sample hospital for this user
+  const hospId = 'hosp-' + Date.now();
+  const newHosp: Hospital = {
+    id: hospId,
+    userId,
+    name: 'Devlet Hastanesi (Örnek)',
+    city: 'İstanbul',
+    createdAt: new Date().toISOString(),
+  };
+
+  const unitId = 'unit-' + Date.now();
+  const newUnit: Unit = {
+    id: unitId,
+    userId,
+    hospitalId: hospId,
+    name: 'Acil Servis Kliniği',
+    minDoctorsPerShift: 2,
+    shareToken: 'ornek-nobet-' + Math.random().toString(36).substring(2, 6),
+    createdAt: new Date().toISOString(),
+  };
+
+  const sampleDoctors: Doctor[] = [
+    { id: 'doc-' + Date.now() + '-1', userId, unitId, title: 'Uzm. Dr.', name: 'Ahmet Kaya', targetShifts: 6, createdAt: new Date().toISOString() },
+    { id: 'doc-' + Date.now() + '-2', userId, unitId, title: 'Uzm. Dr.', name: 'Fatma Şahin', targetShifts: 6, createdAt: new Date().toISOString() },
+    { id: 'doc-' + Date.now() + '-3', userId, unitId, title: 'Asis. Dr.', name: 'Mehmet Çelik', targetShifts: 7, createdAt: new Date().toISOString() },
+    { id: 'doc-' + Date.now() + '-4', userId, unitId, title: 'Asis. Dr.', name: 'Ayşe Yıldız', targetShifts: 7, createdAt: new Date().toISOString() },
+    { id: 'doc-' + Date.now() + '-5', userId, unitId, title: 'Dr.', name: 'Burak Demir', targetShifts: 6, createdAt: new Date().toISOString() },
+  ];
+
+  const periodId = 'period-' + Date.now();
+  const newPeriod: Period = {
+    id: periodId,
+    userId,
+    unitId,
+    name: 'Aralık 2026 Nöbet Listesi',
+    startDate: '2026-12-01',
+    endDate: '2026-12-31',
+    deadline: '2026-11-25',
+    requiredDoctorsPerDay: 2,
+    weekendExtraDoctors: 1,
+    status: 'active',
+    shareToken: 'nobet-' + Math.random().toString(36).substring(2, 8),
+    createdAt: new Date().toISOString(),
+  };
+
+  db.hospitals.push(newHosp);
+  db.units.push(newUnit);
+  db.doctors.push(...sampleDoctors);
+  db.periods.push(newPeriod);
+  writeDB(db);
+
+  return res.json({ success: true, hospital: newHosp, unit: newUnit, period: newPeriod });
+});
+
+// 5. Hospitals (User-Scoped)
+app.get('/api/hospitals', (req, res) => {
+  const userId = getRequestUserId(req);
+  const db = readDB();
+  const userHospitals = db.hospitals.filter((h) => h.userId === userId);
+  res.json(userHospitals);
 });
 
 app.post('/api/hospitals', (req, res) => {
+  const userId = getRequestUserId(req);
   const { name, city } = req.body;
   if (!name) return res.status(400).json({ error: 'Hastane adı zorunludur' });
   const db = readDB();
   const newHospital: Hospital = {
     id: 'hosp-' + Date.now(),
+    userId,
     name: name.trim(),
     city: city ? city.trim() : 'Genel',
     createdAt: new Date().toISOString(),
@@ -260,38 +464,50 @@ app.post('/api/hospitals', (req, res) => {
 });
 
 app.delete('/api/hospitals/:id', (req, res) => {
+  const userId = getRequestUserId(req);
   const { id } = req.params;
   const db = readDB();
-  db.hospitals = db.hospitals.filter(h => h.id !== id);
-  // Also cleanup child units, doctors, periods
-  const unitIdsToRemove = db.units.filter(u => u.hospitalId === id).map(u => u.id);
-  db.units = db.units.filter(u => u.hospitalId !== id);
-  db.doctors = db.doctors.filter(d => !unitIdsToRemove.includes(d.unitId));
-  const periodIdsToRemove = db.periods.filter(p => unitIdsToRemove.includes(p.unitId)).map(p => p.id);
-  db.periods = db.periods.filter(p => !unitIdsToRemove.includes(p.unitId));
-  db.preferences = db.preferences.filter(pref => !periodIdsToRemove.includes(pref.periodId));
+
+  // Find target hospital and verify ownership
+  const target = db.hospitals.find((h) => h.id === id);
+  if (!target || target.userId !== userId) {
+    return res.status(403).json({ error: 'Bu hastaneyi silme yetkiniz yok.' });
+  }
+
+  db.hospitals = db.hospitals.filter((h) => h.id !== id);
+  // Also cleanup child units, doctors, periods belonging to this hospital
+  const unitIdsToRemove = db.units.filter((u) => u.hospitalId === id).map((u) => u.id);
+  db.units = db.units.filter((u) => u.hospitalId !== id);
+  db.doctors = db.doctors.filter((d) => !unitIdsToRemove.includes(d.unitId));
+  const periodIdsToRemove = db.periods.filter((p) => unitIdsToRemove.includes(p.unitId)).map((p) => p.id);
+  db.periods = db.periods.filter((p) => !unitIdsToRemove.includes(p.unitId));
+  db.preferences = db.preferences.filter((pref) => !periodIdsToRemove.includes(pref.periodId));
   writeDB(db);
   res.json({ success: true });
 });
 
-// 3. Units
+// 6. Units (User-Scoped)
 app.get('/api/units', (req, res) => {
+  const userId = getRequestUserId(req);
   const { hospitalId } = req.query;
   const db = readDB();
+
+  let userUnits = db.units.filter((u) => u.userId === userId);
   if (hospitalId) {
-    return res.json(db.units.filter(u => u.hospitalId === hospitalId));
+    userUnits = userUnits.filter((u) => u.hospitalId === hospitalId);
   }
-  res.json(db.units);
+  res.json(userUnits);
 });
 
 app.post('/api/units', (req, res) => {
+  const userId = getRequestUserId(req);
   const { hospitalId, name, minDoctorsPerShift } = req.body;
   if (!hospitalId || !name) return res.status(400).json({ error: 'Hastane ve birim adı zorunludur' });
   const db = readDB();
-  // slugify name for shareToken
   const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 16) + '-' + Math.random().toString(36).substring(2, 6);
   const newUnit: Unit = {
     id: 'unit-' + Date.now(),
+    userId,
     hospitalId,
     name: name.trim(),
     minDoctorsPerShift: Number(minDoctorsPerShift) || 1,
@@ -304,33 +520,48 @@ app.post('/api/units', (req, res) => {
 });
 
 app.delete('/api/units/:id', (req, res) => {
+  const userId = getRequestUserId(req);
   const { id } = req.params;
   const db = readDB();
-  db.units = db.units.filter(u => u.id !== id);
-  db.doctors = db.doctors.filter(d => d.unitId !== id);
-  const periodIdsToRemove = db.periods.filter(p => p.unitId === id).map(p => p.id);
-  db.periods = db.periods.filter(p => p.unitId !== id);
-  db.preferences = db.preferences.filter(pref => !periodIdsToRemove.includes(pref.periodId));
+
+  const target = db.units.find((u) => u.id === id);
+  if (!target || target.userId !== userId) {
+    return res.status(403).json({ error: 'Bu birimi silme yetkiniz yok.' });
+  }
+
+  db.units = db.units.filter((u) => u.id !== id);
+  db.doctors = db.doctors.filter((d) => d.unitId !== id);
+  const periodIdsToRemove = db.periods.filter((p) => p.unitId === id).map((p) => p.id);
+  db.periods = db.periods.filter((p) => p.unitId !== id);
+  db.preferences = db.preferences.filter((pref) => !periodIdsToRemove.includes(pref.periodId));
   writeDB(db);
   res.json({ success: true });
 });
 
-// 4. Doctors
+// 7. Doctors (User-Scoped)
 app.get('/api/doctors', (req, res) => {
+  const userId = getRequestUserId(req);
   const { unitId } = req.query;
   const db = readDB();
+
+  // Doctors belonging to user's units
+  const userUnitIds = new Set(db.units.filter((u) => u.userId === userId).map((u) => u.id));
+  let userDoctors = db.doctors.filter((d) => d.userId === userId || userUnitIds.has(d.unitId));
+
   if (unitId) {
-    return res.json(db.doctors.filter(d => d.unitId === unitId));
+    userDoctors = userDoctors.filter((d) => d.unitId === unitId);
   }
-  res.json(db.doctors);
+  res.json(userDoctors);
 });
 
 app.post('/api/doctors', (req, res) => {
+  const userId = getRequestUserId(req);
   const { unitId, title, name, phone, email, targetShifts, notes } = req.body;
   if (!unitId || !name) return res.status(400).json({ error: 'Birim ve doktor adı zorunludur' });
   const db = readDB();
   const newDoctor: Doctor = {
     id: 'doc-' + Date.now() + '-' + Math.random().toString(36).substring(2, 5),
+    userId,
     unitId,
     title: title || 'Dr.',
     name: name.trim(),
@@ -347,6 +578,7 @@ app.post('/api/doctors', (req, res) => {
 
 // Batch doctor add
 app.post('/api/doctors/batch', (req, res) => {
+  const userId = getRequestUserId(req);
   const { unitId, doctors } = req.body;
   if (!unitId || !Array.isArray(doctors) || doctors.length === 0) {
     return res.status(400).json({ error: 'Geçerli doktor listesi gönderilmedi' });
@@ -357,6 +589,7 @@ app.post('/api/doctors/batch', (req, res) => {
     if (d.name && d.name.trim()) {
       const doc: Doctor = {
         id: 'doc-' + (Date.now() + idx) + '-' + Math.random().toString(36).substring(2, 5),
+        userId,
         unitId,
         title: d.title || 'Dr.',
         name: d.name.trim(),
@@ -374,25 +607,42 @@ app.post('/api/doctors/batch', (req, res) => {
 });
 
 app.delete('/api/doctors/:id', (req, res) => {
+  const userId = getRequestUserId(req);
   const { id } = req.params;
   const db = readDB();
-  db.doctors = db.doctors.filter(d => d.id !== id);
-  db.preferences = db.preferences.filter(p => p.doctorId !== id);
+
+  const target = db.doctors.find((d) => d.id === id);
+  if (!target || (target.userId && target.userId !== userId)) {
+    // If unit belongs to user, allow delete
+    const unit = db.units.find((u) => u.id === target?.unitId);
+    if (!unit || unit.userId !== userId) {
+      return res.status(403).json({ error: 'Bu doktoru silme yetkiniz yok.' });
+    }
+  }
+
+  db.doctors = db.doctors.filter((d) => d.id !== id);
+  db.preferences = db.preferences.filter((p) => p.doctorId !== id);
   writeDB(db);
   res.json({ success: true });
 });
 
-// 5. Duty Periods
+// 8. Duty Periods (User-Scoped)
 app.get('/api/periods', (req, res) => {
+  const userId = getRequestUserId(req);
   const { unitId } = req.query;
   const db = readDB();
+
+  const userUnitIds = new Set(db.units.filter((u) => u.userId === userId).map((u) => u.id));
+  let userPeriods = db.periods.filter((p) => p.userId === userId || userUnitIds.has(p.unitId));
+
   if (unitId) {
-    return res.json(db.periods.filter(p => p.unitId === unitId));
+    userPeriods = userPeriods.filter((p) => p.unitId === unitId);
   }
-  res.json(db.periods);
+  res.json(userPeriods);
 });
 
 app.post('/api/periods', (req, res) => {
+  const userId = getRequestUserId(req);
   const { unitId, name, startDate, endDate, deadline, requiredDoctorsPerDay, weekendExtraDoctors } = req.body;
   if (!unitId || !name || !startDate || !endDate) {
     return res.status(400).json({ error: 'Zorunlu alanlar eksik' });
@@ -401,6 +651,7 @@ app.post('/api/periods', (req, res) => {
   const token = 'nobet-' + Math.random().toString(36).substring(2, 9);
   const newPeriod: Period = {
     id: 'period-' + Date.now(),
+    userId,
     unitId,
     name: name.trim(),
     startDate,
@@ -418,42 +669,53 @@ app.post('/api/periods', (req, res) => {
 });
 
 app.patch('/api/periods/:id', (req, res) => {
+  const userId = getRequestUserId(req);
   const { id } = req.params;
   const updates = req.body;
   const db = readDB();
-  const period = db.periods.find(p => p.id === id);
+  const period = db.periods.find((p) => p.id === id);
   if (!period) return res.status(404).json({ error: 'Dönem bulunamadı' });
+  if (period.userId && period.userId !== userId) {
+    return res.status(403).json({ error: 'Bu dönemi düzenleme yetkiniz yok.' });
+  }
   Object.assign(period, updates);
   writeDB(db);
   res.json(period);
 });
 
 app.delete('/api/periods/:id', (req, res) => {
+  const userId = getRequestUserId(req);
   const { id } = req.params;
   const db = readDB();
-  db.periods = db.periods.filter(p => p.id !== id);
-  db.preferences = db.preferences.filter(p => p.periodId !== id);
+  const period = db.periods.find((p) => p.id === id);
+  if (!period || (period.userId && period.userId !== userId)) {
+    return res.status(403).json({ error: 'Bu dönemi silme yetkiniz yok.' });
+  }
+
+  db.periods = db.periods.filter((p) => p.id !== id);
+  db.preferences = db.preferences.filter((p) => p.periodId !== id);
   writeDB(db);
   res.json({ success: true });
 });
 
-// 6. Public Portal endpoint for shared link:
-// Can query by period shareToken or periodId
+// 9. PUBLIC PORTAL ENDPOINT (FOR ALL DOCTORS VIA SHARED LINK - NO AUTH REQUIRED)
 app.get('/api/public/portal/:token', (req, res) => {
   const { token } = req.params;
   const db = readDB();
-  
+
   // Find period by token or id
-  const period = db.periods.find(p => p.shareToken === token || p.id === token);
+  const period = db.periods.find((p) => p.shareToken === token || p.id === token);
   if (!period) {
-    // If not found as period token, maybe it's a unit share token? Find active period for this unit
-    const unit = db.units.find(u => u.shareToken === token || u.id === token);
+    // If not found as period token, check if it's a unit share token
+    const unit = db.units.find((u) => u.shareToken === token || u.id === token);
     if (unit) {
-      const activePeriod = db.periods.find(p => p.unitId === unit.id && p.status === 'active') || db.periods.find(p => p.unitId === unit.id);
+      const activePeriod =
+        db.periods.find((p) => p.unitId === unit.id && p.status === 'active') ||
+        db.periods.find((p) => p.unitId === unit.id);
       if (activePeriod) {
-        const hospital = db.hospitals.find(h => h.id === unit.hospitalId);
-        const doctors = db.doctors.filter(d => d.unitId === unit.id);
-        const preferences = db.preferences.filter(p => p.periodId === activePeriod.id);
+        const hospital = db.hospitals.find((h) => h.id === unit.hospitalId) || null;
+        const doctors = db.doctors.filter((d) => d.unitId === unit.id);
+        const preferences = db.preferences.filter((p) => p.periodId === activePeriod.id);
         return res.json({
           period: activePeriod,
           unit,
@@ -463,13 +725,13 @@ app.get('/api/public/portal/:token', (req, res) => {
         });
       }
     }
-    return res.status(404).json({ error: 'Nöbet dönemi bulunamadı veya link geçersiz.' });
+    return res.status(404).json({ error: 'Nöbet dönemi bulunamadı veya paylaşılan link geçersiz.' });
   }
 
-  const unit = db.units.find(u => u.id === period.unitId);
-  const hospital = unit ? db.hospitals.find(h => h.id === unit.hospitalId) : null;
-  const doctors = unit ? db.doctors.filter(d => d.unitId === unit.id) : [];
-  const preferences = db.preferences.filter(p => p.periodId === period.id);
+  const unit = db.units.find((u) => u.id === period.unitId);
+  const hospital = unit ? db.hospitals.find((h) => h.id === unit.hospitalId) || null : null;
+  const doctors = unit ? db.doctors.filter((d) => d.unitId === unit.id) : [];
+  const preferences = db.preferences.filter((p) => p.periodId === period.id);
 
   res.json({
     period,
@@ -480,7 +742,7 @@ app.get('/api/public/portal/:token', (req, res) => {
   });
 });
 
-// 7. Submit or Update Doctor Preference
+// 10. Submit preference from doctor via shared link (Public - No Login required)
 app.post('/api/public/submit-preference', (req, res) => {
   const { periodId, doctorId, wantDates, avoidDates, notes } = req.body;
   if (!periodId || !doctorId) {
@@ -489,7 +751,7 @@ app.post('/api/public/submit-preference', (req, res) => {
 
   const db = readDB();
   const existingIndex = db.preferences.findIndex(
-    p => p.periodId === periodId && p.doctorId === doctorId
+    (p) => p.periodId === periodId && p.doctorId === doctorId
   );
 
   const pref: Preference = {
@@ -512,18 +774,17 @@ app.post('/api/public/submit-preference', (req, res) => {
   res.json({ success: true, preference: pref });
 });
 
-// 8. Auto-schedule draft algorithm
+// 11. Auto-schedule draft algorithm
 app.post('/api/periods/:id/generate-schedule', (req, res) => {
   const { id } = req.params;
   const db = readDB();
-  const period = db.periods.find(p => p.id === id);
+  const period = db.periods.find((p) => p.id === id);
   if (!period) return res.status(404).json({ error: 'Dönem bulunamadı' });
 
-  const unit = db.units.find(u => u.id === period.unitId);
-  const doctors = db.doctors.filter(d => d.unitId === period.unitId);
-  const preferences = db.preferences.filter(p => p.periodId === id);
+  const doctors = db.doctors.filter((d) => d.unitId === period.unitId);
+  const preferences = db.preferences.filter((p) => p.periodId === id);
 
-  // Generate date list between start and end date (timezone safe)
+  // Timezone-safe date list
   const dates: string[] = [];
   const [sY, sM, sD] = period.startDate.split('-').map(Number);
   const [eY, eM, eD] = period.endDate.split('-').map(Number);
@@ -538,20 +799,18 @@ app.post('/api/periods/:id/generate-schedule', (req, res) => {
     current.setDate(current.getDate() + 1);
   }
 
-  // Pre-index preferences
   const prefMap = new Map<string, { want: Set<string>; avoid: Set<string> }>();
-  doctors.forEach(doc => {
-    const p = preferences.find(pr => pr.doctorId === doc.id);
+  doctors.forEach((doc) => {
+    const p = preferences.find((pr) => pr.doctorId === doc.id);
     prefMap.set(doc.id, {
       want: new Set(p ? p.wantDates : []),
       avoid: new Set(p ? p.avoidDates : []),
     });
   });
 
-  // Track shift count per doctor to ensure fair distribution
   const shiftCounts = new Map<string, number>();
   const weekendCounts = new Map<string, number>();
-  doctors.forEach(d => {
+  doctors.forEach((d) => {
     shiftCounts.set(d.id, 0);
     weekendCounts.set(d.id, 0);
   });
@@ -560,19 +819,13 @@ app.post('/api/periods/:id/generate-schedule', (req, res) => {
   const previousDayDoctors = new Set<string>();
 
   for (const dateStr of dates) {
-    const dObj = new Date(dateStr + 'T00:00:00');
-    const dayOfWeek = dObj.getDay(); // 0 is Sunday, 6 is Saturday
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dObj = new Date(y, m - 1, d, 12, 0, 0);
+    const dayOfWeek = dObj.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     const requiredCount = period.requiredDoctorsPerDay + (isWeekend ? (period.weekendExtraDoctors || 0) : 0);
 
-    schedule[dateStr] = [];
-
-    // Candidate scoring:
-    // Disqualified if in avoidDates or worked yesterday (no back-to-back shifts)
-    // Preference score: +10 if in wantDates
-    // Workload score: Lower current shifts gets higher priority
-    // Weekend fairness: Lower weekend shifts get higher priority on weekends
-    const scoredDoctors = doctors.map(doc => {
+    const scoredDoctors = doctors.map((doc) => {
       const prefs = prefMap.get(doc.id)!;
       const avoids = prefs.avoid.has(dateStr);
       const wants = prefs.want.has(dateStr);
@@ -582,43 +835,24 @@ app.post('/api/periods/:id/generate-schedule', (req, res) => {
       const weekendShifts = weekendCounts.get(doc.id) || 0;
 
       let score = 0;
-      if (avoids) {
-        score -= 1000; // Strong penalty for mazeret / avoid
-      }
-      if (workedYesterday) {
-        score -= 500; // No back-to-back unless impossible
-      }
-      if (wants) {
-        score += 80; // High reward for requested day
-      }
+      if (avoids) score -= 1000;
+      if (workedYesterday) score -= 500;
+      if (wants) score += 80;
 
-      // Prioritize those below their target shift count
       const shiftDeficit = targetShifts - currentShifts;
       score += shiftDeficit * 15;
 
-      if (isWeekend) {
-        score -= weekendShifts * 10;
-      }
+      if (isWeekend) score -= weekendShifts * 10;
 
-      return {
-        doctor: doc,
-        score,
-        avoids,
-        wants,
-        workedYesterday,
-      };
+      return { doctor: doc, score };
     });
 
-    // Sort descending by score
     scoredDoctors.sort((a, b) => b.score - a.score);
-
-    // Pick top requiredCount doctors
-    const picked = scoredDoctors.slice(0, Math.min(requiredCount, scoredDoctors.length)).map(s => s.doctor.id);
+    const picked = scoredDoctors.slice(0, Math.min(requiredCount, scoredDoctors.length)).map((s) => s.doctor.id);
     schedule[dateStr] = picked;
 
-    // Update state
     previousDayDoctors.clear();
-    picked.forEach(docId => {
+    picked.forEach((docId) => {
       previousDayDoctors.add(docId);
       shiftCounts.set(docId, (shiftCounts.get(docId) || 0) + 1);
       if (isWeekend) {
@@ -632,19 +866,6 @@ app.post('/api/periods/:id/generate-schedule', (req, res) => {
   writeDB(db);
 
   res.json({ success: true, draftSchedule: schedule, shiftCounts: Object.fromEntries(shiftCounts) });
-});
-
-// Save edited draft schedule
-app.post('/api/periods/:id/save-schedule', (req, res) => {
-  const { id } = req.params;
-  const { draftSchedule } = req.body;
-  const db = readDB();
-  const period = db.periods.find(p => p.id === id);
-  if (!period) return res.status(404).json({ error: 'Dönem bulunamadı' });
-
-  period.draftSchedule = draftSchedule;
-  writeDB(db);
-  res.json({ success: true, draftSchedule });
 });
 
 // Setup Vite in middleware mode for dev

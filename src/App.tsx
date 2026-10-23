@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AdminUser, Period, Unit, Hospital } from './types';
+import { User, Period, Unit, Hospital } from './types';
 import { api } from './services/api';
 import { Navbar } from './components/Navbar';
 import { AdminLogin } from './components/AdminLogin';
@@ -8,27 +8,22 @@ import { DoctorPortal } from './components/DoctorPortal';
 import { ShareLinkModal } from './components/ShareLinkModal';
 
 export default function App() {
-  // Authentication state
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
-    const saved = localStorage.getItem('nobet_admin_user');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return null;
-      }
-    }
-    // Default logged in as admin for direct access, or can logout anytime
-    return {
-      username: 'admin',
-      name: 'Dr. Yönetici',
-      role: 'admin',
-    };
-  });
-
   // Check URL query token
   const queryParams = new URLSearchParams(window.location.search);
   const tokenFromUrl = queryParams.get('token');
+
+  // Authentication state - saved user or null
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    try {
+      const saved = localStorage.getItem('nobet_admin_user');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      // ignore
+    }
+    return null;
+  });
 
   // View mode: 'admin' or 'doctor'
   const [viewMode, setViewMode] = useState<'admin' | 'doctor'>(
@@ -43,8 +38,10 @@ export default function App() {
   // Share modal state
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  // Load basic context for share modal
+  // Load basic context for share modal whenever user changes
   useEffect(() => {
+    if (!currentUser) return;
+
     const loadContext = async () => {
       try {
         const [hosps, units, periods] = await Promise.all([
@@ -60,16 +57,16 @@ export default function App() {
       }
     };
     loadContext();
-  }, []);
+  }, [currentUser?.id]);
 
-  const handleLoginSuccess = (user: AdminUser) => {
-    setAdminUser(user);
+  const handleLoginSuccess = (user: User) => {
+    setCurrentUser(user);
     localStorage.setItem('nobet_admin_user', JSON.stringify(user));
     setViewMode('admin');
   };
 
   const handleLogout = () => {
-    setAdminUser(null);
+    setCurrentUser(null);
     localStorage.removeItem('nobet_admin_user');
     setViewMode('admin');
   };
@@ -78,7 +75,7 @@ export default function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-teal-500 selection:text-white">
       {/* Top Navbar */}
       <Navbar
-        user={adminUser}
+        user={currentUser}
         onLogout={handleLogout}
         activePeriod={activePeriod}
         activeUnit={activeUnit}
@@ -94,14 +91,15 @@ export default function App() {
             token={tokenFromUrl || activePeriod?.shareToken || 'acil-kasim-2026'}
             onAdminClick={() => setViewMode('admin')}
           />
-        ) : !adminUser ? (
+        ) : !currentUser ? (
           <AdminLogin
             onSuccess={handleLoginSuccess}
             onCancelToDoctorPortal={() => setViewMode('doctor')}
           />
         ) : (
           <AdminDashboard
-            user={adminUser}
+            key={currentUser.id}
+            user={currentUser}
             onShareClick={() => setIsShareModalOpen(true)}
           />
         )}

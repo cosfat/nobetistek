@@ -1,5 +1,15 @@
+export interface User {
+  id: string;
+  username: string;
+  name: string;
+  createdAt?: string;
+}
+
+export type AdminUser = User;
+
 export interface Hospital {
   id: string;
+  userId?: string;
   name: string;
   city: string;
   createdAt: string;
@@ -7,6 +17,7 @@ export interface Hospital {
 
 export interface Unit {
   id: string;
+  userId?: string;
   hospitalId: string;
   name: string;
   minDoctorsPerShift: number;
@@ -16,6 +27,7 @@ export interface Unit {
 
 export interface Doctor {
   id: string;
+  userId?: string;
   unitId: string;
   title: string;
   name: string;
@@ -28,6 +40,7 @@ export interface Doctor {
 
 export interface Period {
   id: string;
+  userId?: string;
   unitId: string;
   name: string;
   startDate: string; // YYYY-MM-DD
@@ -57,10 +70,4 @@ export interface PortalData {
   hospital: Hospital | null;
   doctors: Doctor[];
   preferences: Preference[];
-}
-
-export interface AdminUser {
-  username: string;
-  name: string;
-  role: 'admin';
 }

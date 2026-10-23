@@ -9,13 +9,22 @@
       "id": "hosp-1",
       "name": "İstanbul Şehir Hastanesi",
       "city": "İstanbul",
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "hosp-2",
       "name": "Ankara Bilkent Şehir Hastanesi",
       "city": "Ankara",
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
+    },
+    {
+      "id": "hosp-1792789594119",
+      "userId": "user-1792789571137-gm78",
+      "name": "İzmir Ege Şehir Hastanesi",
+      "city": "İzmir",
+      "createdAt": "2026-10-23T21:06:34.119Z"
     }
   ],
   "units": [
@@ -25,7 +34,8 @@
       "name": "Acil Tıp Kliniği (Sarı / Kırmızı Alan)",
       "minDoctorsPerShift": 2,
       "shareToken": "acil-tip-kasim",
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "unit-2",
@@ -33,7 +43,8 @@
       "name": "İç Hastalıkları (Dahiliye)",
       "minDoctorsPerShift": 1,
       "shareToken": "dahiliye-nobet",
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "unit-1792788099347",
@@ -41,7 +52,8 @@
       "name": "Çocuk Cerrahi",
       "minDoctorsPerShift": 2,
       "shareToken": "-ocuk-cerrahi-hd7l",
-      "createdAt": "2026-10-23T20:41:39.347Z"
+      "createdAt": "2026-10-23T20:41:39.347Z",
+      "userId": "user-default"
     }
   ],
   "doctors": [
@@ -53,7 +65,8 @@
       "phone": "0532 111 2233",
       "email": "ahmet@hastane.gov.tr",
       "targetShifts": 6,
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "doc-2",
@@ -63,7 +76,8 @@
       "phone": "0533 222 3344",
       "email": "fatma@hastane.gov.tr",
       "targetShifts": 5,
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "doc-3",
@@ -73,7 +87,8 @@
       "phone": "0535 333 4455",
       "email": "mehmet@hastane.gov.tr",
       "targetShifts": 7,
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "doc-4",
@@ -83,7 +98,8 @@
       "phone": "0542 444 5566",
       "email": "zeynep@hastane.gov.tr",
       "targetShifts": 7,
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "doc-5",
@@ -93,7 +109,8 @@
       "phone": "0555 555 6677",
       "email": "burak@hastane.gov.tr",
       "targetShifts": 6,
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "doc-6",
@@ -103,7 +120,8 @@
       "phone": "0505 666 7788",
       "email": "elif@hastane.gov.tr",
       "targetShifts": 7,
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "doc-7",
@@ -113,7 +131,8 @@
       "phone": "0544 777 8899",
       "email": "caner@hastane.gov.tr",
       "targetShifts": 6,
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     },
     {
       "id": "doc-8",
@@ -123,7 +142,8 @@
       "phone": "0530 888 9900",
       "email": "merve@hastane.gov.tr",
       "targetShifts": 6,
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     }
   ],
   "periods": [
@@ -138,7 +158,8 @@
       "weekendExtraDoctors": 1,
       "status": "active",
       "shareToken": "acil-kasim-2026",
-      "createdAt": "2026-10-23T20:30:00.585Z"
+      "createdAt": "2026-10-23T20:30:00.585Z",
+      "userId": "user-default"
     }
   ],
   "preferences": [
@@ -191,6 +212,22 @@
       ],
       "notes": "Pazartesi günleri nöbet tercihimdir.",
       "submittedAt": "2026-10-23T20:30:00.585Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "user-default",
+      "username": "admin",
+      "passwordHash": "123456",
+      "name": "Dr. Yönetici",
+      "createdAt": "2026-10-23T21:06:11.137Z"
+    },
+    {
+      "id": "user-1792789571137-gm78",
+      "username": "drahmet",
+      "passwordHash": "password123",
+      "name": "Dr. Ahmet Barış",
+      "createdAt": "2026-10-23T21:06:11.137Z"
     }
   ]
 }

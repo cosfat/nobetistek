@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Hospital, Unit, Doctor, Period, Preference, AdminUser } from '../types';
+import { Hospital, Unit, Doctor, Period, Preference, User } from '../types';
 import { api } from '../services/api';
 import { DutyMatrixTable } from './DutyMatrixTable';
 import { HospitalManager } from './HospitalManager';
@@ -7,11 +7,11 @@ import { DoctorManager } from './DoctorManager';
 import { PeriodManager } from './PeriodManager';
 import { 
   Building2, Layers, Users, Calendar, BarChart3, Settings, 
-  Share2, RefreshCw, KeyRound, Check, ShieldCheck 
+  Share2, RefreshCw, Sparkles, Plus, AlertCircle, Check 
 } from 'lucide-react';
 
 interface AdminDashboardProps {
-  user: AdminUser;
+  user: User;
   onShareClick: () => void;
 }
 
@@ -39,8 +39,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminUsername, setAdminUsername] = useState(user.username);
   const [adminPassword, setAdminPassword] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
 
-  // Load all initial data
+  // Load all initial data for this user
   const loadData = async () => {
     try {
       setLoading(true);
@@ -100,7 +101,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [user.id]);
 
   // When selected hospital changes, update unit
   const handleHospitalChange = (hospId: string) => {
@@ -143,15 +144,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleUpdateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.updateAdminProfile({
+      const res = await api.updateAdminProfile({
         name: adminName,
         username: adminUsername,
         password: adminPassword || undefined,
       });
-      setSettingsSaved(true);
-      setTimeout(() => setSettingsSaved(false), 2500);
+      if (res.success) {
+        setSettingsSaved(true);
+        setTimeout(() => setSettingsSaved(false), 2500);
+      } else {
+        alert(res.message || 'Hata oluştu');
+      }
     } catch (err: any) {
-      alert('Ayarlar güncellenirken hata: ' + err.message);
+      alert('Ayarlar güncellenirken hata: ' + (err?.message || 'Bilinmeyen hata'));
+    }
+  };
+
+  // Load starter template
+  const handleLoadTemplate = async () => {
+    setLoadingTemplate(true);
+    try {
+      await api.loadStarterTemplate();
+      await loadData();
+    } catch (err: any) {
+      alert('Şablon yüklenirken hata: ' + (err?.message || 'Hata'));
+    } finally {
+      setLoadingTemplate(false);
     }
   };
 
@@ -171,6 +189,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      {/* Welcome & Empty State Banner if user has 0 hospitals */}
+      {hospitals.length === 0 && (
+        <div className="bg-gradient-to-r from-teal-950/70 via-slate-900 to-indigo-950/70 border border-teal-500/30 rounded-3xl p-6 sm:p-8 shadow-2xl text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-teal-400 uppercase tracking-widest bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-500/20">
+                Hesabınız Hazır
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
+                Hoş Geldiniz, {user.name}!
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                Bu hesap tamamen size özeldir. Kendi hastanenizi, birimlerinizi ve doktor kadronuzu ekleyerek nöbet taleplerini toplamaya başlayabilirsiniz.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={handleLoadTemplate}
+                disabled={loadingTemplate}
+                className="px-4 py-2.5 rounded-xl font-bold text-xs bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 flex items-center justify-center space-x-2 transition-all disabled:opacity-50"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>{loadingTemplate ? 'Yükleniyor...' : 'Örnek Klinik Şablonu Yükle'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('hospitals')}
+                className="px-4 py-2.5 rounded-xl font-bold text-xs bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-600/30 flex items-center justify-center space-x-2 transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Kendi Hastanemi Ekle</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Filter & Context Selector Bar */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Selectors */}
@@ -184,13 +242,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <select
               value={selectedHospitalId}
               onChange={(e) => handleHospitalChange(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500 truncate"
+              disabled={hospitals.length === 0}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500 truncate disabled:opacity-50"
             >
-              {hospitals.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                </option>
-              ))}
+              {hospitals.length === 0 ? (
+                <option value="">(Henüz Hastane Eklenmedi)</option>
+              ) : (
+                hospitals.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.name}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -203,15 +266,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <select
               value={selectedUnitId}
               onChange={(e) => handleUnitChange(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500 truncate"
+              disabled={units.length === 0}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500 truncate disabled:opacity-50"
             >
-              {units
-                .filter((u) => u.hospitalId === selectedHospitalId)
-                .map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
+              {units.length === 0 ? (
+                <option value="">(Birim Yok)</option>
+              ) : (
+                units
+                  .filter((u) => u.hospitalId === selectedHospitalId)
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.name}
+                    </option>
+                  ))
+              )}
             </select>
           </div>
 
@@ -224,15 +292,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <select
               value={selectedPeriodId}
               onChange={(e) => handlePeriodChange(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500 truncate"
+              disabled={periods.length === 0}
+              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-teal-500 truncate disabled:opacity-50"
             >
-              {periods
-                .filter((p) => p.unitId === selectedUnitId)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
+              {periods.length === 0 ? (
+                <option value="">(Dönem Yok)</option>
+              ) : (
+                periods
+                  .filter((p) => p.unitId === selectedUnitId)
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))
+              )}
             </select>
           </div>
         </div>
@@ -249,7 +322,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={onShareClick}
-            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all"
+            disabled={!currentPeriod}
+            className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white shadow-md shadow-teal-600/20 transition-all disabled:opacity-40"
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>Ortak Linki Paylaş</span>
@@ -280,7 +354,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }`}
         >
           <Building2 className="w-4 h-4" />
-          <span>Hastane & Birimler ({hospitals.length})</span>
+          <span>Hastanelerim & Birimler ({hospitals.length})</span>
         </button>
 
         <button
@@ -292,7 +366,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Doktor Kadrosu ({currentDoctors.length})</span>
+          <span>Doktor Kadrom ({currentDoctors.length})</span>
         </button>
 
         <button
@@ -316,7 +390,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }`}
         >
           <Settings className="w-4 h-4" />
-          <span>Yönetici Ayarları</span>
+          <span>Hesap Ayarları</span>
         </button>
       </div>
 
@@ -336,18 +410,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               onRefresh={loadData}
             />
           ) : (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 space-y-3">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 space-y-4">
               <Calendar className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="text-base font-bold text-white">Nöbet Dönemi Bulunamadı</h3>
-              <p className="text-xs max-w-sm mx-auto">
-                Bu klinik için henüz bir nöbet dönemi tanımlanmamış. "Nöbet Dönemleri" sekmesinden yeni bir dönem açabilirsiniz.
+              <h3 className="text-base font-bold text-white">Görüntülenecek Nöbet Listesi Yok</h3>
+              <p className="text-xs max-w-md mx-auto leading-relaxed">
+                {hospitals.length === 0
+                  ? 'Henüz bir hastane veya birim eklemediniz. "Hastanelerim & Birimler" sekmesinden ilk biriminizi oluşturabilir veya yukarıdaki örnek şablonu kullanabilirsiniz.'
+                  : 'Seçili klinik için aktif bir nöbet dönemi bulunmuyor. "Nöbet Dönemleri" sekmesinden yeni bir dönem açabilirsiniz.'}
               </p>
-              <button
-                onClick={() => setActiveTab('periods')}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white"
-              >
-                Yeni Dönem Başlat
-              </button>
+              <div className="flex justify-center gap-3 pt-2">
+                {hospitals.length === 0 ? (
+                  <button
+                    onClick={() => setActiveTab('hospitals')}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white"
+                  >
+                    Hastane ve Birim Ekle
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setActiveTab('periods')}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white"
+                  >
+                    Yeni Nöbet Dönemi Aç
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </>
@@ -389,28 +476,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* 5. Yönetici Ayarları */}
       {activeTab === 'settings' && (
-        <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
+        <div className="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl space-y-5">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5" />
+              <Settings className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Yönetici Hesap Bilgileri</h3>
-              <p className="text-xs text-slate-400">Giriş kullanıcı adı ve şifrenizi güncelleyebilirsiniz</p>
+              <h3 className="text-base font-bold text-white">Hesap ve Giriş Bilgileri</h3>
+              <p className="text-xs text-slate-400">
+                Hesap adınızı, kullanıcı adınızı ve şifrenizi güncelleyin
+              </p>
             </div>
           </div>
 
           {settingsSaved && (
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center space-x-2">
               <Check className="w-4 h-4 text-emerald-400" />
-              <span>Yönetici bilgileri başarıyla güncellendi.</span>
+              <span>Hesap bilgileriniz başarıyla güncellendi.</span>
             </div>
           )}
 
           <form onSubmit={handleUpdateAdmin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                Yönetici Adı & Unvanı
+                Adınız & Unvanınız
               </label>
               <input
                 type="text"
@@ -423,7 +512,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
-                Giriş Kullanıcı Adı
+                Kullanıcı Adı
               </label>
               <input
                 type="text"
