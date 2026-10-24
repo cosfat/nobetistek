@@ -8,9 +8,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
 
 app.use(express.json({ limit: '10mb' }));
+
+// CORS headers for custom VPS / reverse proxy setups
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, x-user-id');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// Health check endpoint
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', serverTime: new Date().toISOString() });
+});
 
 // Persistence file
 const DATA_DIR = path.join(__dirname, 'data');
@@ -868,17 +884,35 @@ app.post('/api/periods/:id/generate-schedule', (req, res) => {
   res.json({ success: true, draftSchedule: schedule, shiftCounts: Object.fromEntries(shiftCounts) });
 });
 
-// Setup Vite in middleware mode for dev
+// Setup Vite in middleware mode for dev, or static serving for production
 async function startServer() {
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: 'spa',
-  });
+  const isProd = process.env.NODE_ENV === 'production';
+  let distPath = path.join(__dirname, 'dist');
+  if (!fs.existsSync(path.join(distPath, 'index.html')) && fs.existsSync(path.join(__dirname, 'index.html'))) {
+    distPath = __dirname;
+  }
+  const distExists = fs.existsSync(path.join(distPath, 'index.html'));
 
-  app.use(vite.middlewares);
+  if (isProd && distExists) {
+    app.use(express.static(distPath));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api/')) {
+        return next();
+      }
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
+    const { createServer: createViteServer } = await import('vite');
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n🏥 NöbetTalep Sunucusu http://0.0.0.0:${PORT} adresinde aktif!\n`);
+  const port = process.env.PORT ? Number(process.env.PORT) : PORT;
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`\n🏥 NöbetTalep Sunucusu http://0.0.0.0:${port} adresinde aktif! (Mod: ${isProd && distExists ? 'Production' : 'Development'})\n`);
   });
 }
 
